@@ -1,9 +1,24 @@
+#circlePopup{
+    position:absolute;
+    width:auto;
+    height:auto;
+    position:absolute;
+    border-radius:5px;
+    padding: 5px 10px;
+    z-index:3000;
+    visibility: hidden;
+    top:0;
+    left:50%;
+    transform:translateX(-50%);
+    background-color: white;
+}
 #circleTooltip{
     width:auto;
     height:auto;
     position:absolute;
     z-index:3000
 }
+
 .tooltip {
     position: relative;
 	width: 180px;
@@ -29,4 +44,11 @@
     left: -30px;
     transform: rotate(-55deg);
     clip-path:polygon(0% 50%,100% 50%,100% 100%)
+}
+#canvasTest{
+    z-index:10 !important;
+    position:absolute;
+    background-color: transparent;
+    top:0;
+    left:0;
 }
