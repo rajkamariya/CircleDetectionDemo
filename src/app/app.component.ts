@@ -194,7 +194,7 @@ export class AppComponent implements OnInit{
           }
           cv.circle(dst, center, radius, redColor,2);
           this.circlePopup.nativeElement.style.visibility = "visible";
-          this.circleMessage = "Please bring the gauze closer to your camera view";
+          this.circlePopup.nativeElement.innerHTML = "Please bring the gauze closer to your camera view";
         }else{
           let leftEdge = this.videoEle.nativeElement.offsetWidth*20/100;
           let rightEdge = this.videoEle.nativeElement.offsetWidth*80/100;
@@ -203,11 +203,11 @@ export class AppComponent implements OnInit{
           let color;
           if(circleLeftX > leftEdge && circleRightX < rightEdge){
             this.circlePopup.nativeElement.style.visibility = "visible";
-            this.circleMessage = "Now start performing your "+this.examType.toLowerCase()+" circular cutting task";
+            this.circlePopup.nativeElement.innerHTML = "Now start performing your "+this.examType.toLowerCase()+" circular cutting task";
             color = greenColor;
           }else{
             this.circlePopup.nativeElement.style.visibility = "visible";
-            this.circleMessage = "Please position your gauze in the middle of your camera view";
+            this.circlePopup.nativeElement.innerHTML = "Please position your gauze in the middle of your camera view";
             color = redColor;
           }
           if(bigCircle.cols>0){
