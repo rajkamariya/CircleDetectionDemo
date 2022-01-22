@@ -165,7 +165,7 @@ export class AppComponent implements OnInit{
         }else{
           this.examType = "Exam";
         }
-        let maxRadius = bigCircle.cols>0?(60*videoOffset/videoHeight):(80*videoOffset/videoHeight);
+        let maxRadius = bigCircle.cols>0?(50*videoOffset/videoHeight):(70*videoOffset/videoHeight);
         if(radius<maxRadius){
           if(bigCircle.cols>0){
             for(let b = 0; b < bigCircle.cols; ++b) {
