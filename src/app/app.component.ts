@@ -24,7 +24,7 @@ export class AppComponent implements OnInit{
   cvState: string;
   detectionType = "Circle";
   examType:string = '';
-
+  circleMessage:string = 'Please place circular gauze into the middle of your camera view';
   constructor(private ngZone:NgZone,private ngxOpenCv: NgxOpenCVService){
     
   }
@@ -53,20 +53,27 @@ export class AppComponent implements OnInit{
                 this.animate();
               }
             },0)
+            setInterval(()=>{
+              this.circlePopup.nativeElement.innerHTML = this.circleMessage;
+            },3000)
           break;
         case 'Dot':
           setInterval(()=>{  
             if(this.videoEle.nativeElement.videoHeight>0){
               this.dotDetection();
             }
-          }); 
+          },0); 
           break;
         default:
-          if(this.videoEle.nativeElement.videoHeight>0){
+          
           setInterval(()=>{
+            if(this.videoEle.nativeElement.videoHeight>0){
             this.animate();
+            }
           },0)
-        }
+          setInterval(()=>{
+            this.circlePopup.nativeElement.innerHTML = this.circleMessage;
+          },3000)
           break;
       }
       
@@ -149,7 +156,7 @@ export class AppComponent implements OnInit{
 
     if(circles.cols === 0){
       this.circlePopup.nativeElement.style.visibility = "visible";
-      this.circlePopup.nativeElement.innerHTML = "Please place circular gauze into the middle of your camera view";
+      this.circleMessage = "Please place circular gauze into the middle of your camera view";
     }else if(circles.cols === 1){
       for(let i = 0; i < circles.cols; ++i) {
         let x = circles.data32F[i * 3]*videoOffset/videoHeight;
@@ -165,7 +172,7 @@ export class AppComponent implements OnInit{
         }else{
           this.examType = "Exam";
         }
-        let maxRadius = bigCircle.cols>0?(75*videoOffset/videoHeight):(100*videoOffset/videoHeight);
+        let maxRadius = bigCircle.cols>0?(50*videoOffset/videoHeight):(60*videoOffset/videoHeight);
         if(radius<maxRadius){
           if(bigCircle.cols>0){
             for(let b = 0; b < bigCircle.cols; ++b) {
@@ -187,7 +194,7 @@ export class AppComponent implements OnInit{
           }
           cv.circle(dst, center, radius, redColor,2);
           this.circlePopup.nativeElement.style.visibility = "visible";
-          this.circlePopup.nativeElement.innerHTML = "Please bring the gauze closer to your camera view";
+          this.circleMessage = "Please bring the gauze closer to your camera view";
         }else{
           let leftEdge = this.videoEle.nativeElement.offsetWidth*20/100;
           let rightEdge = this.videoEle.nativeElement.offsetWidth*80/100;
@@ -196,11 +203,11 @@ export class AppComponent implements OnInit{
           let color;
           if(circleLeftX > leftEdge && circleRightX < rightEdge){
             this.circlePopup.nativeElement.style.visibility = "visible";
-            this.circlePopup.nativeElement.innerHTML = "Now start performing your "+this.examType.toLowerCase()+" circular cutting task";
+            this.circleMessage = "Now start performing your "+this.examType.toLowerCase()+" circular cutting task";
             color = greenColor;
           }else{
             this.circlePopup.nativeElement.style.visibility = "visible";
-            this.circlePopup.nativeElement.innerHTML = "Please position your gauze in the middle of your camera view";
+            this.circleMessage = "Please position your gauze in the middle of your camera view";
             color = redColor;
           }
           if(bigCircle.cols>0){
