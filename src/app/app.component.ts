@@ -24,7 +24,10 @@ export class AppComponent implements OnInit{
   cvState: string;
   detectionType = "Circle";
   examType:string = '';
-  circleMessage:string = 'Please place circular gauze into the middle of your camera view';
+  // circleMessage:string = 'Please place circular gauze into the middle of your camera view';
+  defualtMessageTimeout;
+  showDefaultMessage:boolean = true;
+
   constructor(private ngZone:NgZone,private ngxOpenCv: NgxOpenCVService){
     
   }
@@ -53,9 +56,7 @@ export class AppComponent implements OnInit{
                 this.animate();
               }
             },0)
-            setInterval(()=>{
-              this.circlePopup.nativeElement.innerHTML = this.circleMessage;
-            },3000)
+            
           break;
         case 'Dot':
           setInterval(()=>{  
@@ -71,9 +72,7 @@ export class AppComponent implements OnInit{
             this.animate();
             }
           },0)
-          setInterval(()=>{
-            this.circlePopup.nativeElement.innerHTML = this.circleMessage;
-          },3000)
+          
           break;
       }
       
@@ -156,8 +155,18 @@ export class AppComponent implements OnInit{
 
     if(circles.cols === 0){
       this.circlePopup.nativeElement.style.visibility = "visible";
-      this.circleMessage = "Please place circular gauze into the middle of your camera view";
+      if(this.showDefaultMessage){  
+        this.circlePopup.nativeElement.innerHTML = "Please place circular gauze into the middle of your camera view";
+      }
     }else if(circles.cols === 1){
+      this.showDefaultMessage = false;
+      if(this.defualtMessageTimeout){
+        clearTimeout(this.defualtMessageTimeout);
+      }
+      this.defualtMessageTimeout=setTimeout(()=>{
+        this.showDefaultMessage = true;
+      },2000);
+
       for(let i = 0; i < circles.cols; ++i) {
         let x = circles.data32F[i * 3]*videoOffset/videoHeight;
         let y = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
