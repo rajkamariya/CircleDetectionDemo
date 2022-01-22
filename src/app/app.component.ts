@@ -145,7 +145,7 @@ export class AppComponent implements OnInit{
     // // let maxRadius = 0
     
     // cv.Canny(src, src, 40, 150, 3, false);
-    cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,70,70);
+    cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,85,85);
 
     if(circles.cols === 0){
       this.circlePopup.nativeElement.style.visibility = "visible";
@@ -165,7 +165,7 @@ export class AppComponent implements OnInit{
         }else{
           this.examType = "Exam";
         }
-        let maxRadius = bigCircle.cols>0?(50*videoOffset/videoHeight):(70*videoOffset/videoHeight);
+        let maxRadius = bigCircle.cols>0?(75*videoOffset/videoHeight):(100*videoOffset/videoHeight);
         if(radius<maxRadius){
           if(bigCircle.cols>0){
             for(let b = 0; b < bigCircle.cols; ++b) {
