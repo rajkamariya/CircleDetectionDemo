@@ -12,6 +12,18 @@
     transform:translateX(-50%);
     background-color: white;
 }
+#video{
+    height:auto;
+    width:100%;
+    position:absolute;
+    z-index:-10;
+}
+#canvas{
+    height:auto;
+    width:100%;
+    position:absolute;
+    z-index:10;
+}
 #circleTooltip{
     width:auto;
     height:auto;
@@ -44,11 +56,4 @@
     left: -30px;
     transform: rotate(-55deg);
     clip-path:polygon(0% 50%,100% 50%,100% 100%)
-}
-#canvasTest{
-    z-index:10 !important;
-    position:absolute;
-    background-color: transparent;
-    top:0;
-    left:0;
 }

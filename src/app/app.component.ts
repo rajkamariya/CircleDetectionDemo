@@ -24,7 +24,7 @@ export class AppComponent implements OnInit{
   cvState: string;
   detectionType = "Circle";
   examType:string = '';
-  
+
   constructor(private ngZone:NgZone,private ngxOpenCv: NgxOpenCVService){
     
   }
@@ -89,15 +89,15 @@ export class AppComponent implements OnInit{
     
      cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY);
     //  let thresh = new cv.Mat();
-     cv.threshold(src,src,100,255,cv.THRESH_BINARY|cv.THRESH_OTSU)
+    cv.threshold(src,src,50,50,cv.THRESH_BINARY|cv.THRESH_OTSU)
     // cv.Canny(src, src, 30, 100, 3, false);    
     //  console.log(thresh)
     let dot = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(src,dot,hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
     // console.log(hierarchy);
-    let cnt = dot.get(20);
-    console.log(cnt)
+    // let cnt = dot.get(20);
+    console.log(dot.size())
     let redColor = new cv.Scalar(255, 0, 0, 255);
     // console.log(dot)
     cv.drawContours(dst,dot,-1,redColor,1,cv.LINE_4,hierarchy,1)
@@ -145,7 +145,7 @@ export class AppComponent implements OnInit{
     // // let maxRadius = 0
     
     // cv.Canny(src, src, 40, 150, 3, false);
-    cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,85,85);
+    cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,70,70);
 
     if(circles.cols === 0){
       this.circlePopup.nativeElement.style.visibility = "visible";
@@ -165,7 +165,7 @@ export class AppComponent implements OnInit{
         }else{
           this.examType = "Exam";
         }
-        let maxRadius = bigCircle.cols>0?(75*videoOffset/videoHeight):(100*videoOffset/videoHeight);
+        let maxRadius = bigCircle.cols>0?(50*videoOffset/videoHeight):(70*videoOffset/videoHeight);
         if(radius<maxRadius){
           if(bigCircle.cols>0){
             for(let b = 0; b < bigCircle.cols; ++b) {
