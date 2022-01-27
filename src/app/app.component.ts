@@ -22,7 +22,7 @@ export class AppComponent implements OnInit{
   isPopup = false;
   context;
   cvState: string;
-  detectionType = "Circle";
+  detectionType = "Circle";//Dot,Circle
   examType:string = '';
   // circleMessage:string = 'Please place circular gauze into the middle of your camera view';
   defualtMessageTimeout;
@@ -44,7 +44,7 @@ export class AppComponent implements OnInit{
   }
 
   initRecording(){
-    navigator.mediaDevices.getUserMedia({video:true}).then(stream=>{
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
       console.log(stream);
       this.videoEle.nativeElement.srcObject = stream;
       this.context = this.canvas.nativeElement.getContext("2d")
@@ -60,9 +60,11 @@ export class AppComponent implements OnInit{
           break;
         case 'Dot':
           setInterval(()=>{  
-            if(this.videoEle.nativeElement.videoHeight>0){
+          // setTimeout(()=>{ 
+          if(this.videoEle.nativeElement.videoHeight>0){
               this.dotDetection();
-            }
+            // }},2000)
+          }
           },0); 
           break;
         default:
@@ -81,6 +83,9 @@ export class AppComponent implements OnInit{
   dotDetection(){
     console.log("DOT Detection");
      // Do stuff
+    let videoHeight = this.videoEle.nativeElement.videoHeight;
+    let videoOffset = this.videoEle.nativeElement.offsetHeight;
+    
     this.videoEle.nativeElement.height = this.videoEle.nativeElement.videoHeight;
     this.videoEle.nativeElement.width = this.videoEle.nativeElement.videoWidth;
     let src = new cv.Mat(this.videoEle.nativeElement.videoHeight,this.videoEle.nativeElement.videoWidth,cv.CV_8UC4)
@@ -93,25 +98,70 @@ export class AppComponent implements OnInit{
     let dstcap = new cv.VideoCapture(this.videoEle.nativeElement);
     dstcap.read(dst);
     
-     cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY);
-    //  let thresh = new cv.Mat();
-    cv.threshold(src,src,50,50,cv.THRESH_BINARY|cv.THRESH_OTSU)
-    // cv.Canny(src, src, 30, 100, 3, false);    
-    //  console.log(thresh)
-    let dot = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(src,dot,hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-    // console.log(hierarchy);
-    // let cnt = dot.get(20);
-    console.log(dot.size())
-    let redColor = new cv.Scalar(255, 0, 0, 255);
-    // console.log(dot)
-    cv.drawContours(dst,dot,-1,redColor,1,cv.LINE_4,hierarchy,1)
-     
-     cv.imshow('canvas', dst);
-     src.delete();
-     dst.delete();
+    cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY);
+    // let msize = new cv.Size(3, 3);
+    // let anchor = new cv.Point(-1, -1);
+        
+    // cv.blur(src,src,ksize,anchor,) 
+    // cv.GaussianBlur(src,src,msize,0)
+    // cv.medianBlur(src,src,3) 
 
+    cv.threshold(src,src,100,255,cv.THRESH_BINARY|cv.THRESH_OTSU)
+    // cv.Canny(src, src, 30, 100, 3, false);    
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+
+    let redColor = new cv.Scalar(255, 0, 0, 255);
+    let greenColor = new cv.Scalar(0, 255, 0, 255);
+
+    cv.findContours(src,contours,hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+    
+    // cv.drawContours(dst,contours,-1, redColor, 1, 8, hierarchy, 1);
+    let dots =[];
+    for (let i = 0; i < contours.size(); ++i) {
+      let tmp = new cv.Mat();
+      let cnt = contours.get(i);
+      // cv.approxPolyDP(cnt,tmp,contours.size()*0.05,true)
+      cv.convexHull(cnt, tmp, false, true);
+      if(tmp.total()>8){
+        let circle = cv.minEnclosingCircle(cnt);
+        let circleArea = (3.14*circle.radius*circle.radius)-((3.14*circle.radius*circle.radius)*21/100);
+        // let circleArea = (3.14*circle.radius*circle.radius)-50;        
+        if(circleArea>0){
+          
+            // console.log(3.14*circle.radius*circle.radius)
+
+          if(cv.contourArea(tmp)>circleArea)
+          {
+            console.log(cv.contourArea(tmp))
+            console.log(circleArea)  
+            // console.log(circle.radius);
+            console.log(3.14*circle.radius*circle.radius)
+
+            if(circle.radius<15){
+              circle.center.x =circle.center.x * videoOffset/videoHeight;
+              circle.center.y =circle.center.y * videoOffset/videoHeight 
+              circle.radius =circle.radius * videoOffset/videoHeight 
+              dots.push({center:circle.center,radius:circle.radius});
+              cv.circle(dst, circle.center, circle.radius, redColor);
+            }
+          }
+        }
+      }
+      cnt.delete(); 
+      tmp.delete();
+    }
+    console.log(dots)
+    if(dots.length >0 ){
+      for(let i=0;i<dots.length;i++){
+
+      }
+    }
+    cv.imshow('canvas', dst);
+    src.delete();
+    dst.delete();
+    contours.delete();
+    hierarchy.delete();
   }
   animate() {
     // Do stuff
@@ -183,7 +233,7 @@ export class AppComponent implements OnInit{
         }
         let maxRadius = bigCircle.cols>0?(50*videoOffset/videoHeight):(60*videoOffset/videoHeight);
         if(radius<maxRadius){
-          if(bigCircle.cols>0){
+          if(bigCircle.cols===1){
             for(let b = 0; b < bigCircle.cols; ++b) {
               let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;;
               let by = bigCircle.data32F[b * 3 + 1]*videoOffset/videoHeight;;
@@ -192,7 +242,7 @@ export class AppComponent implements OnInit{
               cv.circle(dst, bcenter, bradius, redColor,2);
             }
           }
-          if(smallCircle.cols>0){
+          if(smallCircle.cols===1){
             for(let s = 0; s < smallCircle.cols; ++s) {
               let sx = smallCircle.data32F[s * 3]*videoOffset/videoHeight;;
               let sy = smallCircle.data32F[s * 3 + 1]*videoOffset/videoHeight;;
@@ -219,7 +269,7 @@ export class AppComponent implements OnInit{
             this.circlePopup.nativeElement.innerHTML = "Please position your gauze in the middle of your camera view";
             color = redColor;
           }
-          if(bigCircle.cols>0){
+          if(bigCircle.cols===1){
             for(let b = 0; b < bigCircle.cols; ++b) {
               let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;;
               let by = bigCircle.data32F[b * 3 + 1]*videoOffset/videoHeight;;
@@ -228,7 +278,7 @@ export class AppComponent implements OnInit{
               cv.circle(dst, bcenter, bradius, color,2);
             }
           }
-          if(smallCircle.cols>0){
+          if(smallCircle.cols===1){
             for(let s = 0; s < smallCircle.cols; ++s) {
               let sx = smallCircle.data32F[s * 3]*videoOffset/videoHeight;
               let sy = smallCircle.data32F[s * 3 + 1]*videoOffset/videoHeight;
