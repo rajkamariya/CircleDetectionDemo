@@ -84,6 +84,7 @@ export class AppComponent implements OnInit{
     console.log("DOT Detection");
      // Do stuff
     let videoHeight = this.videoEle.nativeElement.videoHeight;
+    let videoWidth = this.videoEle.nativeElement.videoWidth;
     let videoOffset = this.videoEle.nativeElement.offsetHeight;
     
     this.videoEle.nativeElement.height = this.videoEle.nativeElement.videoHeight;
@@ -165,28 +166,53 @@ export class AppComponent implements OnInit{
   }
   animate() {
     // Do stuff
+    // console.log(this.videoEle.nativeElement.offsetWidth);
     let videoHeight = this.videoEle.nativeElement.videoHeight;
+    let videoWidth = this.videoEle.nativeElement.videoWidth;
     let videoOffset = this.videoEle.nativeElement.offsetHeight;
-    console.log(this.videoEle.nativeElement.videoHeight)
+    // console.log(this.videoEle.nativeElement.videoHeight)
     this.videoEle.nativeElement.height = this.videoEle.nativeElement.videoHeight;
     this.videoEle.nativeElement.width = this.videoEle.nativeElement.videoWidth;
     let src = new cv.Mat(this.videoEle.nativeElement.videoHeight,this.videoEle.nativeElement.videoWidth,cv.CV_8UC4)
+    let srcdata = new cv.Mat(); 
     let cap = new cv.VideoCapture(this.videoEle.nativeElement);
+    
     cap.read(src);
+    //From This
+    let ssize = new cv.Size(this.videoEle.nativeElement.videoWidth,this.videoEle.nativeElement.videoHeight);
+    let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.videoEle.nativeElement.width, 0, 0, this.videoEle.nativeElement.height, this.videoEle.nativeElement.width, this.videoEle.nativeElement.height]);
+    let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.videoEle.nativeElement.width, 0, 100, this.videoEle.nativeElement.height, this.videoEle.nativeElement.width-100, this.videoEle.nativeElement.height]);
 
+    let M = cv.getPerspectiveTransform(srcTri, dstTri);
+
+    cv.warpPerspective(src, srcdata, M, ssize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+    //This
     this.videoEle.nativeElement.height = this.videoEle.nativeElement.offsetHeight;
     this.videoEle.nativeElement.width = this.videoEle.nativeElement.offsetWidth;
     let dst = new cv.Mat(this.videoEle.nativeElement.offsetHeight,this.videoEle.nativeElement.offsetWidth,cv.CV_8UC4)
     let dstcap = new cv.VideoCapture(this.videoEle.nativeElement);
     dstcap.read(dst);
-    
+    //From this to
+    let dsize = new cv.Size( this.videoEle.nativeElement.offsetWidth,this.videoEle.nativeElement.offsetHeight);
+
+    srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.videoEle.nativeElement.width, 0, 0, this.videoEle.nativeElement.height, this.videoEle.nativeElement.width, this.videoEle.nativeElement.height]);
+
+    dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.videoEle.nativeElement.width, 0, 100, this.videoEle.nativeElement.height, this.videoEle.nativeElement.width-100, this.videoEle.nativeElement.height]);
+
+    M = cv.getPerspectiveTransform(srcTri, dstTri);
+
+    cv.warpPerspective(dst, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+    //This
     cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(srcdata, srcdata, cv.COLOR_RGBA2GRAY);
     let ksize = new cv.Size(3, 3);
     // let anchor = new cv.Point(-1, -1);
         
     // cv.blur(src,src,ksize,anchor,) 
     cv.GaussianBlur(src,src,ksize,0)
     cv.medianBlur(src,src,3) 
+    cv.GaussianBlur(srcdata,srcdata,ksize,0)
+    cv.medianBlur(srcdata,srcdata,3) 
     
     let circles = new cv.Mat();
     // let circles
@@ -199,10 +225,18 @@ export class AppComponent implements OnInit{
     // // let param2 = 70
     // // let minRadius = 0
     // // let maxRadius = 0
-    
+    let regular = false;
     // cv.Canny(src, src, 40, 150, 3, false);
-    cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,85,85);
-
+    cv.HoughCircles(srcdata,circles,cv.HOUGH_GRADIENT,1,100,85,85);
+    // console.log(circles)
+    if(circles.cols === 0){
+      M = cv.getPerspectiveTransform(dstTri,srcTri);
+      regular = true;
+      // cv.warpPerspective(src, src, M, ssize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+      cv.warpPerspective(dst, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+      cv.HoughCircles(src,circles,cv.HOUGH_GRADIENT,1,100,85,85);
+     // console.log(circles)
+    }
     if(circles.cols === 0){
       this.circlePopup.nativeElement.style.visibility = "visible";
       if(this.showDefaultMessage){  
@@ -219,13 +253,31 @@ export class AppComponent implements OnInit{
 
       for(let i = 0; i < circles.cols; ++i) {
         let x = circles.data32F[i * 3]*videoOffset/videoHeight;
-        let y = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+        let y;
         let radius = circles.data32F[i * 3 + 2]*videoOffset/videoHeight;
+        //From This
+        if(regular){
+          y = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+        }else{
+          if(videoHeight>videoWidth){
+            y = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)+15;
+          }else{
+            y = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)-15;
+          }
+        }
+        //To This
         let center = new cv.Point(x, y);
         let smallCircle = new cv.Mat();
         let bigCircle = new cv.Mat();
-        cv.HoughCircles(src,smallCircle,cv.HOUGH_GRADIENT,1,100,70,70,0,circles.data32F[i * 3 + 2]-5);
-        cv.HoughCircles(src,bigCircle,cv.HOUGH_GRADIENT,1,100,70,70,circles.data32F[i * 3 + 2]+5);
+        //FRom this
+        if(regular){
+          cv.HoughCircles(src,smallCircle,cv.HOUGH_GRADIENT,1,100,70,70,0,circles.data32F[i * 3 + 2]-15);
+          cv.HoughCircles(src,bigCircle,cv.HOUGH_GRADIENT,1,100,70,70,circles.data32F[i * 3 + 2]+15,300);
+        }else{
+          cv.HoughCircles(srcdata,smallCircle,cv.HOUGH_GRADIENT,1,100,70,70,0,radius-30);
+          cv.HoughCircles(srcdata,bigCircle,cv.HOUGH_GRADIENT,1,100,70,70,radius+30,300);
+        }
+        //To this
         if(smallCircle.cols>0 || bigCircle.cols>0){
           this.examType = "Practice";
         }else{
@@ -235,18 +287,40 @@ export class AppComponent implements OnInit{
         if(radius<maxRadius){
           if(bigCircle.cols===1){
             for(let b = 0; b < bigCircle.cols; ++b) {
-              let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;;
-              let by = bigCircle.data32F[b * 3 + 1]*videoOffset/videoHeight;;
-              let bradius = bigCircle.data32F[b * 3 + 2]*videoOffset/videoHeight;;
+              let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;
+              let by;
+              let bradius = bigCircle.data32F[b * 3 + 2]*videoOffset/videoHeight;
+              //From This
+              if(regular){
+                by = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+              }else{
+                if(videoHeight>videoWidth){
+                  by = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)+15;
+                }else{
+                  by = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)-15;
+                }
+              }
+              //To This
               let bcenter = new cv.Point(bx, by);
               cv.circle(dst, bcenter, bradius, redColor,2);
             }
           }
           if(smallCircle.cols===1){
             for(let s = 0; s < smallCircle.cols; ++s) {
-              let sx = smallCircle.data32F[s * 3]*videoOffset/videoHeight;;
-              let sy = smallCircle.data32F[s * 3 + 1]*videoOffset/videoHeight;;
-              let sradius = smallCircle.data32F[s * 3 + 2]*videoOffset/videoHeight;;
+              let sx = smallCircle.data32F[s * 3]*videoOffset/videoHeight;
+              let sy;
+              let sradius = smallCircle.data32F[s * 3 + 2]*videoOffset/videoHeight;
+              //From This
+              if(regular){
+                sy = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+              }else{
+                if(videoHeight>videoWidth){
+                  sy = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)+15;
+                }else{
+                  sy = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)-15;
+                }
+              }
+              //To This
               let scenter = new cv.Point(sx, sy);
               cv.circle(dst, scenter, sradius, redColor,2);
             }
@@ -271,9 +345,20 @@ export class AppComponent implements OnInit{
           }
           if(bigCircle.cols===1){
             for(let b = 0; b < bigCircle.cols; ++b) {
-              let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;;
-              let by = bigCircle.data32F[b * 3 + 1]*videoOffset/videoHeight;;
-              let bradius = bigCircle.data32F[b * 3 + 2]*videoOffset/videoHeight;;
+              let bx = bigCircle.data32F[b * 3]*videoOffset/videoHeight;
+              let by;
+              let bradius = bigCircle.data32F[b * 3 + 2]*videoOffset/videoHeight;
+              //From This
+              if(regular){
+                by = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+              }else{
+                if(videoHeight>videoWidth){
+                  by = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)+15;
+                }else{
+                  by = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)-15;
+                }
+              }
+              //To This
               let bcenter = new cv.Point(bx, by);
               cv.circle(dst, bcenter, bradius, color,2);
             }
@@ -281,20 +366,43 @@ export class AppComponent implements OnInit{
           if(smallCircle.cols===1){
             for(let s = 0; s < smallCircle.cols; ++s) {
               let sx = smallCircle.data32F[s * 3]*videoOffset/videoHeight;
-              let sy = smallCircle.data32F[s * 3 + 1]*videoOffset/videoHeight;
+              let sy;
               let sradius = smallCircle.data32F[s * 3 + 2]*videoOffset/videoHeight;
+              //From This
+              if(regular){
+                sy = circles.data32F[i * 3 + 1]*videoOffset/videoHeight;
+              }else{
+                if(videoHeight>videoWidth){
+                  sy = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)+15;
+                }else{
+                  sy = (circles.data32F[i * 3 + 1]*videoOffset/videoHeight)-15;
+                }
+              }
+              //To This
               let scenter = new cv.Point(sx, sy);
               cv.circle(dst, scenter, sradius, color,2);
             }
           }
           cv.circle(dst, center, radius, color,2);
         }
+        smallCircle.delete();
+        bigCircle.delete();
       }
     }
-  
+    //From this
+    if(!regular){
+      let E = cv.getPerspectiveTransform(dstTri, srcTri);
+      cv.warpPerspective(dst, dst, E, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+      E.delete();
+    }
+    //This
     cv.imshow('canvas', dst);
     src.delete();
+    srcdata.delete();
     dst.delete();
-
+    circles.delete();
+    M.delete();
+    srcTri.delete();
+    dstTri.delete();
   }
 }
