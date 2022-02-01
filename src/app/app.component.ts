@@ -203,7 +203,7 @@ export class AppComponent implements OnInit{
       cv.convexHull(cnt, tmp, false, true);
       if(tmp.total()>8){
         let circle = cv.minEnclosingCircle(cnt);
-        let circleArea = (3.14*circle.radius*circle.radius)-((3.14*circle.radius*circle.radius)*21/100);
+        let circleArea = (3.14*circle.radius*circle.radius)-((3.14*circle.radius*circle.radius)*25/100);
         if(circleArea>0){
           if(cv.contourArea(tmp)>circleArea)
           {
@@ -243,7 +243,7 @@ export class AppComponent implements OnInit{
       // let cnt2 = contours.get(dots[dots.length-1]);
       // let circle2 = cv.minEnclosingCircle(cnt2);
       // cv.circle(dst, circle2.center, circle2.radius, redColor, 2);
-      console.log(circle)
+      // console.log(circle)
        if(circle.radius<45){
           this.circlePopup.nativeElement.style.visibility = "visible";
           this.circlePopup.nativeElement.style.color = "red";
